@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Image AI</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    <link rel="stylesheet" href="{% static 'css/CustomMap.css' %}" type="text/css">
+
+    <script src="{% static 'js/OpenLayers.js' %}"></script>
+
+    <script type="text/javascript">
+        var map;
+
+        function init() {
+
+            map = new OpenLayers.Map('map');
+            osm = new OpenLayers.Layer.OSM("Simple OSM Map");
+
+            //var layer = new OpenLayers.Layer.Text("text", { location: "{% static 'textfile.txt' %}" });
+            var layer = new OpenLayers.Layer.Vector("POIs", {
+                strategies: [new OpenLayers.Strategy.Fixed],
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: "api/get_pois",
+                    format: new OpenLayers.Format.KML({
+                        extractStyles: true,
+                        extractAttributes: true,
+                        maxDepth: 2
+                    })
+                })
+            });
+
+
+            map.addLayers([osm, layer]);
+
+            map.setCenter(
+                new OpenLayers.LonLat(120.333586, 22.75555).transform(
+                    new OpenLayers.Projection("EPSG:4326"),
+                    map.getProjectionObject()
+                ), 15.3);
+            //map.zoomToMaxExtent();
+
+
+            // Interaction; not needed for initial display.
+            selectControl = new OpenLayers.Control.SelectFeature(layer);
+            map.addControl(selectControl);
+            selectControl.activate();
+            layer.events.on({
+                'featureselected': onFeatureSelect,
+                'featureunselected': onFeatureUnselect
+            });
+        }
+
+        // Needed only for interaction, not for the display.
+        function onPopupClose(evt) {
+            // 'this' is the popup.
+            var feature = this.feature;
+            if (feature.layer) { // The feature is not destroyed
+                selectControl.unselect(feature);
+            } else { // After "moveend" or "refresh" events on POIs layer all 
+                //     features have been destroyed by the Strategy.BBOX
+                this.destroy();
+            }
+        }
+
+        function onFeatureSelect(evt) {
+            feature = evt.feature;
+            popup = new OpenLayers.Popup.FramedCloud("featurePopup",
+                feature.geometry.getBounds().getCenterLonLat(),
+                new OpenLayers.Size(100, 100),
+                "<h3>" + feature.attributes.title + "</h3>" +
+                feature.attributes.description,
+                null, true, onPopupClose);
+            feature.popup = popup;
+            popup.feature = feature;
+            map.addPopup(popup, true);
+        }
+
+        function onFeatureUnselect(evt) {
+            feature = evt.feature;
+            if (feature.popup) {
+                popup.feature = null;
+                map.removePopup(feature.popup);
+                feature.popup.destroy();
+                feature.popup = null;
+            }
+        }
+    </script>
+
+</head>
+
+<body onload="init()">
+
+    <div class="container">
+
+        <h5>影像AI</h5>
+
+        <div class="row">
+
+            <!-- 輸入區塊row .. col-lg-6 .. card -->
+            <div class="col-lg-4 mb-5">
+                <div class="card">
+                    <div class="card-body">
+
+                        <form method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <small class="form-text text-muted">照片上傳</small>
+
+                            <input type="file" name="upload_image">
+
+                            <button type="submit" class="btn btn-primary">確定</button>
+                        </form>
+                    </div>
+                </div>
+            </div><!-- 區塊結束-->
+            <!-- 輸入區塊row .. col-lg-6 .. card -->
+            <div class="col-lg-4 mb-5">
+                <div class="card">
+                    <div class="card-body">
+
+                        {% if img_result_b64 %}
+
+                        <img src="data:image/png;base64,{{img_result_b64}}" , class='img-fluid' />
+                        {% endif %}
+                    </div>
+                </div>
+            </div><!-- 區塊結束 -->
+
+            <!-- 輸入區塊row .. col-lg-6 .. card -->
+            <div class="col-lg-4 mb-5">
+                <div class="card">
+                    <div class="card-body">
+
+                        {% if obj_info %}
+                        {% for obj in obj_info %}
+                        <ul>
+                            {% for key, value in obj.items %}
+                            <li>{{key}} - {{value}}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endfor %}
+                        {% endif %}
+
+                        {% if status %}
+                        <ul>
+                            <li>{{status}}</li>
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            </div><!-- 區塊結束 -->
+
+        </div><!-- end of row -->
+
+        <div class="row">
+            <div id="map" class="smallmap"></div>
+        </div>
+
+
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,62 @@
+-<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Image AI</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h5>影像AI:偵測照片中的人臉，並判斷性別與年齡</h5>
+
+        <div class="row">
+
+            <!-- 上傳區 -->
+            <div class="col-lg-4 mb-5">
+                <div class="card">
+                    <div class="card-body">
+
+                        <form method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <small class="form-text text-muted">拍一張人臉照片上傳，放心，照片不會被儲存!</small>
+
+                            <input type="file" name="upload_image">
+
+                            <button type="submit" class="btn btn-primary">確定</button>
+                        </form>
+                    </div>
+                </div>
+            </div><!-- 區塊結束-->
+
+            <!-- 顯示訊息 -->
+            <div class="col-lg-4 mb-5">
+                <div class="card">
+                    <div class="card-body">
+
+                        {% if info_from_server %}
+
+                        <p>收到的訊息:{{ info_from_server }}</p>
+
+                        <p>上傳的檔案位置:<a href="{{ uploaded_img }}">{{ uploaded_img }}</a></p>
+
+                        {% endif %}
+                    </div>
+                </div>
+            </div><!-- 區塊結束 -->
+
+        </div><!-- end of row -->
+
+        <p>展示Yolov5 Restful人臉偵測，性別與年齡預測(模型使用InceptionV3遷移學習)!</p>
+    </div>
+
+</body>
+
+</html>
